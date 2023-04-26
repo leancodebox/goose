@@ -81,3 +81,7 @@ func GetBool(path string, defaultValue ...any) bool {
 func GetStringMapString(path string) map[string]string {
 	return v.GetStringMapString(path)
 }
+
+func All() map[string]interface{} {
+	return v.AllSettings()
+}
