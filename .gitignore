@@ -1,0 +1,10 @@
+.env
+.idea
+.fleet
+/tmp/
+thh/
+.env.base
+/storage/
+thh
+*.exe
+.DS_Store
