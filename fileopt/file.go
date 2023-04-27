@@ -1,8 +1,6 @@
 package fileopt
 
 import (
-	"fmt"
-	"net/url"
 	"os"
 	"path/filepath"
 	"strings"
@@ -28,8 +26,8 @@ func StoragePut[DType string | []byte](filename string, data DType, append bool)
 }
 
 // Put 将数据存入文件
-func Put(data []byte, to string) (err error) {
-	err = os.WriteFile(to, data, 0644)
+func Put[DataType []byte | string](data DataType, to string) (err error) {
+	err = os.WriteFile(to, []byte(data), 0644)
 	return
 }
 
@@ -55,12 +53,7 @@ func FilePutContents[DType string | []byte](filename string, data DType, isAppen
 		if err != nil {
 			return err
 		}
-		defer func(fl *os.File) {
-			err := fl.Close()
-			if err != nil {
-				fmt.Println(err)
-			}
-		}(fl)
+		defer fl.Close()
 		_, err = fl.Write(bData)
 		return err
 	} else {
@@ -103,16 +96,15 @@ func DirExistOrCreate(dirPath string) bool {
 	}
 }
 
-func UrlDecode(s string) string {
-	r, err := url.QueryUnescape(s)
-	if err != nil {
-		return ""
+func AbsPath(path string) (string, error) {
+	if strings.HasPrefix(path, "~/") || path == "~" {
+		homeDir, err := os.UserHomeDir()
+		if err != nil {
+			return path, err
+		}
+		path = filepath.Join(homeDir, path[2:])
 	}
-	return r
-}
-
-func UrlEncode(s string) string {
-	return url.QueryEscape(s)
+	return path, nil
 }
 
 func FileNameWithoutExtension(fileName string) string {
