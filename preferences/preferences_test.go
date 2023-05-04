@@ -6,6 +6,6 @@ import (
 )
 
 func TestSpliceConfig(t *testing.T) {
-	d := GetStringSplice("db.list")
+	d := GetIntSlice("db.list")
 	fmt.Println(d)
 }
