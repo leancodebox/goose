@@ -4,6 +4,7 @@ import (
 	"errors"
 	"github.com/leancodebox/goose/array"
 	"github.com/leancodebox/goose/fileopt"
+	"github.com/leancodebox/goose/jsonopt"
 	"sync"
 )
 
@@ -15,7 +16,7 @@ var queueList = make(map[string][]string)
 func InitQueue(path string) {
 	queueFilePath = path
 	data, _ := fileopt.FileGetContents(queueFilePath)
-	fileQueue := json.Decode[map[string][]string](string(data))
+	fileQueue := jsonopt.Decode[map[string][]string](string(data))
 	if fileQueue != nil {
 		queueList = fileQueue
 	}
@@ -27,7 +28,7 @@ func saveQueueData() {
 	}
 	queueSaveLock.Lock()
 	defer queueSaveLock.Unlock()
-	fileopt.PutContent(queueFilePath, json.EncodeFormat(queueList))
+	fileopt.PutContent(queueFilePath, jsonopt.EncodeFormat(queueList))
 }
 
 func QueueRPush(key string, data ...string) {
@@ -58,7 +59,7 @@ func QueueRPushObj[T any](key string, data ...T) {
 	defer queueLock.Unlock()
 	queue, _ := queueList[key]
 	strData := array.ArrayMap(func(t T) string {
-		return json.Encode(t)
+		return jsonopt.Encode(t)
 	}, data)
 	queue = append(queue, strData...)
 	queueList[key] = queue
@@ -74,7 +75,7 @@ func QueueLPopObj[t any](key string) (t, error) {
 		queue = queue[1:]
 		queueList[key] = queue
 		saveQueueData()
-		return json.Decode[t](result), nil
+		return jsonopt.Decode[t](result), nil
 	}
 	var obj t
 	return obj, errors.New("queue is null")

@@ -1,4 +1,4 @@
-package app
+package timeopt
 
 import (
 	"time"
