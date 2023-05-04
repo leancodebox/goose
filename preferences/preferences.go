@@ -82,6 +82,14 @@ func GetStringMapString(path string) map[string]string {
 	return v.GetStringMapString(path)
 }
 
+func GetStringSplice(path string) []string {
+	return v.GetStringSlice(path)
+}
+
+func GetIntSplice(path string) []int {
+	return v.GetIntSlice(path)
+}
+
 func All() map[string]interface{} {
 	return v.AllSettings()
 }
