@@ -4,7 +4,6 @@ import (
 	"errors"
 	"github.com/leancodebox/goose/array"
 	"github.com/leancodebox/goose/fileopt"
-	"github.com/leancodebox/goose/json"
 	"sync"
 )
 

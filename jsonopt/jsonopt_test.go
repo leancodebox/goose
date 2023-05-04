@@ -1,4 +1,4 @@
-package json
+package jsonopt
 
 import (
 	"fmt"
