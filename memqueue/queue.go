@@ -17,7 +17,7 @@ var queueList = make(map[string][]string)
 func InitQueue(path string) {
 	queueFilePath = path
 	data, _ := fileopt.FileGetContents(queueFilePath)
-	fileQueue, _ := jsonopt.Decode[map[string][]string](string(data))
+	fileQueue := jsonopt.Decode[map[string][]string](string(data))
 	if fileQueue != nil {
 		queueList = fileQueue
 	}
@@ -77,7 +77,7 @@ func QueueLPopObj[t any](key string) (t, error) {
 		queue = queue[1:]
 		queueList[key] = queue
 		saveQueueData()
-		return jsonopt.Decode[t](result)
+		return jsonopt.DecodeE[t](result)
 	}
 	var obj t
 	return obj, errors.New("queue is null")
