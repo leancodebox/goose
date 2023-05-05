@@ -60,7 +60,7 @@ func QueueRPushObj[T any](key string, data ...T) {
 	defer queueLock.Unlock()
 	queue, _ := queueList[key]
 	strData := array.ArrayMap(func(t T) string {
-		entity, _ := jsonopt.Encode(t)
+		entity := jsonopt.Encode(t)
 		return entity
 	}, data)
 	queue = append(queue, strData...)

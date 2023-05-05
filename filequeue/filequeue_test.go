@@ -2,13 +2,12 @@ package filequeue
 
 import (
 	"fmt"
+	"github.com/leancodebox/goose/jsonopt"
 	"io"
 	"testing"
 
 	"github.com/leancodebox/goose/fileopt"
-	"github.com/leancodebox/goose/json"
 	"github.com/leancodebox/goose/power"
-	"github.com/purerun/dbhelper/util/app"
 
 	"github.com/spf13/cast"
 )
@@ -46,7 +45,6 @@ type TestUnitData struct {
 }
 
 func TestFqm(t *testing.T) {
-	app.InitStart()
 	var q Queue
 	q, err := NewDefaultFileQueue("./storage/queue")
 
@@ -63,12 +61,11 @@ func TestFqm(t *testing.T) {
 	stopNum := 10_000
 
 	for i := 1; i <= maxTest; i++ {
-		err = q.Push(json.Encode(TestUnitData{true, cast.ToString(i) + "加个汉字"}))
+		err = q.Push(jsonopt.Encode(TestUnitData{true, cast.ToString(i) + "加个汉字"}))
 		if err != nil {
 			t.Error(err)
 		}
 		if i%stopNum == 0 {
-			t.Log(app.GetRunTime())
 		}
 	}
 
@@ -82,7 +79,6 @@ func TestFqm(t *testing.T) {
 		n += 1
 		if n%10 == 0 {
 			t.Log(data)
-			t.Log(app.GetRunTime())
 			break
 		}
 	}
@@ -106,12 +102,10 @@ func TestFqm(t *testing.T) {
 			n += 1
 			if n%stopNum == 0 {
 				t.Log(`n%`+cast.ToString(stopNum), data)
-				t.Log("goId", app.GetRunTime())
 			}
 		}
 	}, 3)
 
-	t.Log("end:", app.GetRunTime())
 	err = q.Clean()
 	if err != nil {
 		t.Error(err)
@@ -126,7 +120,6 @@ func TestArrSet(t *testing.T) {
 }
 
 func TestFqm2(t *testing.T) {
-	app.InitStart()
 	var q Queue
 	q, err := NewFileQueue("./storage/bigBlockQueue", 1024)
 
@@ -143,35 +136,16 @@ func TestFqm2(t *testing.T) {
 	stopNum := 10_000
 
 	for i := 1; i <= maxTest; i++ {
-		err = q.Push(json.Encode(TestUnitData{true, cast.ToString(i) + "加个汉字加个汉字加个汉字加个汉字加个汉字加个汉字加个汉字加个汉字加个汉字加个汉字加个汉字加个汉字加个汉字加个汉字加个汉字加个汉字加个汉字加个汉字加个汉字加个汉字加个汉字加个汉字加个汉字加个汉字加个汉字加个汉字加个汉字加个汉字加个汉字加个汉字加个汉字加个汉字加个汉字加个汉字加个汉字加个汉字加个汉字加个汉字加个汉字加个汉字加个汉字加个汉字加个汉字加个汉字加个汉字加个汉字加个汉字加个汉字加个汉字加个汉字加个汉字加个汉字加个汉字加个汉字加个汉字加个汉字加个汉字加个汉字加个汉字加个汉字加个汉字加个汉字加个汉字加个汉字加个汉字加个汉字加个汉字加个汉字加个汉字加个汉字加个汉字加个汉字加个汉字加个汉字加个汉字加个汉字加个汉字加个汉字加个汉字加个汉字"}))
+		err = q.Push(jsonopt.Encode(TestUnitData{true, cast.ToString(i) + "加个汉字加个汉字加个汉字加个汉字加个汉字加个汉字加个汉字加个汉字加个汉字加个汉字加个汉字加个汉字加个汉字加个汉字加个汉字加个汉字加个汉字加个汉字加个汉字加个汉字加个汉字加个汉字加个汉字加个汉字加个汉字加个汉字加个汉字加个汉字加个汉字加个汉字加个汉字加个汉字加个汉字加个汉字加个汉字加个汉字加个汉字加个汉字加个汉字加个汉字加个汉字加个汉字加个汉字加个汉字加个汉字加个汉字加个汉字加个汉字加个汉字加个汉字加个汉字加个汉字加个汉字加个汉字加个汉字加个汉字加个汉字加个汉字加个汉字加个汉字加个汉字加个汉字加个汉字加个汉字加个汉字加个汉字加个汉字加个汉字加个汉字加个汉字加个汉字加个汉字加个汉字加个汉字加个汉字加个汉字加个汉字加个汉字加个汉字加个汉字"}))
 		if err != nil {
 			t.Error(err)
 		}
 		if i%stopNum == 0 {
-			t.Log(app.GetRunTime())
+
 		}
 	}
 
 	n := 0
-	//for {
-	//	data, popErr := q.Pop()
-	//	if popErr != nil {
-	//		t.Log(err)
-	//		break
-	//	}
-	//	n += 1
-	//	if n%10 == 0 {
-	//		t.Log(data)
-	//		t.Log(app.GetRunTime())
-	//		break
-	//	}
-	//}
-	//t.Log("清理数据")
-	//
-	//err = q.Clean()
-	//if err != nil {
-	//	t.Error(err)
-	//}
 	power.Together(func(goId int) {
 		for {
 			data, popErr := q.Pop()
@@ -186,12 +160,10 @@ func TestFqm2(t *testing.T) {
 			n += 1
 			if n%stopNum == 0 {
 				t.Log(`n%`+cast.ToString(stopNum), data)
-				t.Log("goId", app.GetRunTime())
 			}
 		}
 	}, 3)
 
-	t.Log("end:", app.GetRunTime())
 	err = q.Clean()
 	if err != nil {
 		t.Error(err)
