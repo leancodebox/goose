@@ -3,6 +3,7 @@ package preferences
 import (
 	"flag"
 	"fmt"
+
 	"github.com/fsnotify/fsnotify"
 	"github.com/spf13/cast"
 	"github.com/spf13/viper"

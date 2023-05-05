@@ -4,12 +4,12 @@ import (
 	"encoding/json"
 )
 
-func Encode(obj any) string {
+func Encode(obj any) (string, error) {
 	marshal, err := json.Marshal(obj)
 	if err != nil {
-		return ""
+		return "", err
 	}
-	return string(marshal)
+	return string(marshal), nil
 }
 
 func EncodeFormat(obj any) string {
@@ -20,8 +20,8 @@ func EncodeFormat(obj any) string {
 	return string(marshal)
 }
 
-func Decode[T any, P string | []byte](str P) T {
+func Decode[T any, P string | []byte](str P) (T, error) {
 	var obj T
-	_ = json.Unmarshal([]byte(str), &obj)
-	return obj
+	err := json.Unmarshal([]byte(str), &obj)
+	return obj, err
 }

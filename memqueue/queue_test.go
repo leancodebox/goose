@@ -2,12 +2,13 @@ package memqueue
 
 import (
 	"fmt"
-	"github.com/leancodebox/goose/power"
-	"github.com/spf13/cast"
 	"strings"
 	"sync"
 	"testing"
 	"thh/arms/app"
+
+	"github.com/leancodebox/goose/power"
+	"github.com/spf13/cast"
 )
 
 func TestQueue(t *testing.T) {

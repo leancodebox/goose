@@ -2,10 +2,11 @@ package memqueue
 
 import (
 	"errors"
+	"sync"
+
 	"github.com/leancodebox/goose/array"
 	"github.com/leancodebox/goose/fileopt"
 	"github.com/leancodebox/goose/jsonopt"
-	"sync"
 )
 
 var queueLock = &sync.Mutex{}
@@ -16,7 +17,7 @@ var queueList = make(map[string][]string)
 func InitQueue(path string) {
 	queueFilePath = path
 	data, _ := fileopt.FileGetContents(queueFilePath)
-	fileQueue := jsonopt.Decode[map[string][]string](string(data))
+	fileQueue, _ := jsonopt.Decode[map[string][]string](string(data))
 	if fileQueue != nil {
 		queueList = fileQueue
 	}
@@ -59,7 +60,8 @@ func QueueRPushObj[T any](key string, data ...T) {
 	defer queueLock.Unlock()
 	queue, _ := queueList[key]
 	strData := array.ArrayMap(func(t T) string {
-		return jsonopt.Encode(t)
+		entity, _ := jsonopt.Encode(t)
+		return entity
 	}, data)
 	queue = append(queue, strData...)
 	queueList[key] = queue
@@ -75,7 +77,7 @@ func QueueLPopObj[t any](key string) (t, error) {
 		queue = queue[1:]
 		queueList[key] = queue
 		saveQueueData()
-		return jsonopt.Decode[t](result), nil
+		return jsonopt.Decode[t](result)
 	}
 	var obj t
 	return obj, errors.New("queue is null")
