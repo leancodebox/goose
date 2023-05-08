@@ -1,5 +1,5 @@
 # Goose
 
 ```shell
-git tag v0.0.10 && git push --tags
+git tag v0.0.11 && git push --tags
 ```

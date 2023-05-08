@@ -1,9 +1,6 @@
 package luckrand
 
 import (
-	"crypto/sha1"
-	"encoding/hex"
-	"errors"
 	"fmt"
 	"math/rand"
 	"runtime"
@@ -77,32 +74,6 @@ func (itself *Counter) Get() int64 {
 	itself.lock.Lock()
 	defer itself.lock.Unlock()
 	return itself.number
-}
-
-func MakePassword(password string) string {
-	//生成16位 Salt
-	salt := RandomString(16)
-	//计算 Salt 和密码组合的SHA1摘要
-	hash := sha1.New()
-	_, _ = hash.Write([]byte(password + salt))
-	bs := hex.EncodeToString(hash.Sum(nil))
-	//存储 Salt 值和摘要， ":"分割
-	return salt + ":" + bs
-}
-
-func VerifyPassword(SecretPassword, inputPassword string) error {
-	passwordStore := strings.Split(SecretPassword, ":")
-	if len(passwordStore) != 2 {
-		return errors.New("no pass")
-	}
-	//计算 Salt 和密码组合的SHA1摘要
-	hash := sha1.New()
-	_, _ = hash.Write([]byte(inputPassword + passwordStore[0]))
-	bs := hex.EncodeToString(hash.Sum(nil))
-	if bs == passwordStore[1] {
-		return nil
-	}
-	return errors.New("input password error")
 }
 
 type Trace struct {
