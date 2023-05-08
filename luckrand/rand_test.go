@@ -36,19 +36,6 @@ func TestIdMakerP(t *testing.T) {
 	fmt.Println(counter.Get())
 }
 
-func TestPassword(t *testing.T) {
-	tmpPassWord := "asdasdas"
-	password := MakePassword(tmpPassWord)
-	err := VerifyPassword(password, tmpPassWord)
-	if err != nil {
-		fmt.Println(err)
-	}
-	err = VerifyPassword(password, "tmpPassWord")
-	if err != nil {
-		fmt.Println(err)
-	}
-}
-
 func TestGetTraceId(t *testing.T) {
 	MyTraceInit()
 	tr := MyTrace()
