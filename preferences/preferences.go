@@ -24,6 +24,7 @@ func init() {
 	if err := v.ReadInConfig(); err != nil {
 		fmt.Println("ReadInConfig err", err)
 	}
+	v.WatchConfig()
 }
 
 func internalGet(path string, defaultValue ...any) any {
