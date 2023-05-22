@@ -35,12 +35,3 @@ func TestIdMakerP(t *testing.T) {
 	}()
 	fmt.Println(counter.Get())
 }
-
-func TestGetTraceId(t *testing.T) {
-	MyTraceInit()
-	tr := MyTrace()
-	fmt.Println(tr.GetNextTrace())
-	fmt.Println(tr.GetNextTrace())
-	fmt.Println(tr.GetNextTrace())
-
-}

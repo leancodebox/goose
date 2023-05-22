@@ -13,11 +13,16 @@ func SetBasePath(path string) {
 }
 
 func GetStoragePath(filename string) string {
-	return basePath + filename
+	return filepath.Join(basePath, filename)
+}
+
+func StorageGetE(filename string) (string,error) {
+	data, err := FileGetContents(GetStoragePath(filename))
+	return string(data),err
 }
 
 func StorageGet(filename string) string {
-	data, _ := FileGetContents(basePath + filename)
+	data, _ := StorageGetE(filename)
 	return string(data)
 }
 
