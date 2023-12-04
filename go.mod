@@ -6,7 +6,6 @@ require (
 	github.com/fsnotify/fsnotify v1.6.0
 	github.com/gertd/go-pluralize v0.2.1
 	github.com/golang-jwt/jwt/v4 v4.5.0
-	github.com/google/uuid v1.3.0
 	github.com/iancoleman/strcase v0.2.0
 	github.com/shirou/gopsutil/v3 v3.23.3
 	github.com/spf13/cast v1.5.0

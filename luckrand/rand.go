@@ -2,7 +2,7 @@ package luckrand
 
 import (
 	"math/rand"
-	"sync"
+	"sync/atomic"
 	"time"
 )
 
@@ -26,46 +26,23 @@ func RandomString(length int) string {
 	return string(b)
 }
 
-func RandomNum(n int) int {
-	return rand.Intn(n)
-}
-
-// IdMakerInOnP idMaker
-type IdMakerInOnP struct {
-	id   uint64
-	lock sync.Mutex
-	once sync.Once
-}
-
-func (itself *IdMakerInOnP) SetStartId(id uint64) {
-	itself.once.Do(func() {
-		itself.lock.Lock()
-		defer itself.lock.Unlock()
-		itself.id = id
-	})
-}
-
-func (itself *IdMakerInOnP) Get() uint64 {
-	itself.lock.Lock()
-	defer itself.lock.Unlock()
-	itself.id += 1
-	return itself.id
-}
-
 type Counter struct {
-	lock   sync.Mutex
 	number int64
 }
 
+func NewCounter(startId int64) *Counter {
+	return &Counter{number: startId}
+}
+
 func (itself *Counter) Add() int64 {
-	itself.lock.Lock()
-	defer itself.lock.Unlock()
-	itself.number += 1
-	return itself.number
+	return atomic.AddInt64(&itself.number, 1)
 }
 
 func (itself *Counter) Get() int64 {
-	itself.lock.Lock()
-	defer itself.lock.Unlock()
-	return itself.number
+	return atomic.LoadInt64(&itself.number)
+}
+
+func (itself *Counter) Clean() int64 {
+	atomic.StoreInt64(&itself.number, 0)
+	return 0
 }
