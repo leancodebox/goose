@@ -5,7 +5,6 @@ import (
 	"strings"
 	"sync"
 	"testing"
-	"thh/arms/app"
 
 	"github.com/leancodebox/goose/power"
 	"github.com/spf13/cast"
@@ -49,7 +48,6 @@ var maxTest = 300_000_000
 var stopNum = 1_000_000
 
 func TestQueueB(t *testing.T) {
-	app.InitStart()
 	key := "queueKey"
 	type TestUnitData struct {
 		Valid bool   `json:"valid"`
@@ -59,7 +57,7 @@ func TestQueueB(t *testing.T) {
 	for i := 1; i <= maxTest; i++ {
 		QueueRPush(key, data)
 		if i%stopNum == 0 {
-			t.Log(app.GetRunTime())
+
 		}
 	}
 	n := 0
@@ -72,11 +70,10 @@ func TestQueueB(t *testing.T) {
 			n += 1
 			if n%stopNum == 0 {
 				t.Log(`n%`+cast.ToString(stopNum), data)
-				t.Log("goId", app.GetRunTime())
+
 			}
 		}
 	}, 3)
-	t.Log("end:", app.GetRunTime())
 }
 
 // Memory Queue
@@ -135,7 +132,6 @@ func (q *MemoryQueue) Len() int {
 }
 
 func TestFastQ(t *testing.T) {
-	app.InitStart()
 	q := NewMemoryQueue()
 	type TestUnitData struct {
 		Valid bool   `json:"valid"`
@@ -145,7 +141,7 @@ func TestFastQ(t *testing.T) {
 	for i := 1; i <= maxTest; i++ {
 		q.Push(data)
 		if i%stopNum == 0 {
-			t.Log(app.GetRunTime())
+
 		}
 	}
 	n := 0
@@ -158,9 +154,8 @@ func TestFastQ(t *testing.T) {
 			n += 1
 			if n%stopNum == 0 {
 				t.Log(`n%`+cast.ToString(stopNum), data)
-				t.Log("goId", app.GetRunTime())
+
 			}
 		}
 	}, 3)
-	t.Log("end:", app.GetRunTime())
 }
