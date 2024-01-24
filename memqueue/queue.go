@@ -29,7 +29,7 @@ func saveQueueData() {
 	}
 	queueSaveLock.Lock()
 	defer queueSaveLock.Unlock()
-	fileopt.PutContent(queueFilePath, jsonopt.EncodeFormat(queueList))
+	fileopt.FilePutContents(queueFilePath, jsonopt.EncodeFormat(queueList))
 }
 
 func QueueRPush(key string, data ...string) {
