@@ -6,30 +6,6 @@ import (
 	"strings"
 )
 
-var basePath string
-
-func SetBasePath(path string) {
-	basePath = path
-}
-
-func GetStoragePath(filename string) string {
-	return filepath.Join(basePath, filename)
-}
-
-func StorageGetE(filename string) (string,error) {
-	data, err := FileGetContents(GetStoragePath(filename))
-	return string(data),err
-}
-
-func StorageGet(filename string) string {
-	data, _ := StorageGetE(filename)
-	return string(data)
-}
-
-func StoragePut[DType string | []byte](filename string, data DType, append bool) error {
-	return FilePutContents(basePath+filename, data, append)
-}
-
 // Put 将数据存入文件
 func Put[DataType []byte | string](data DataType, to string) (err error) {
 	err = os.WriteFile(to, []byte(data), 0644)
@@ -49,10 +25,7 @@ func FilePutContents[DType string | []byte](filename string, data DType, isAppen
 	}
 
 	bData := []byte(data)
-	needAppend := false
-	if len(isAppend) > 0 && isAppend[0] == true {
-		needAppend = true
-	}
+	needAppend := len(isAppend) > 0 && isAppend[0] == true
 	if needAppend {
 		fl, err := os.OpenFile(filename, os.O_APPEND|os.O_CREATE|os.O_RDWR, 0644)
 		if err != nil {
@@ -66,14 +39,6 @@ func FilePutContents[DType string | []byte](filename string, data DType, isAppen
 	}
 }
 
-func PutContent[DType string | []byte](filename string, data DType) {
-	_ = FilePutContents(filename, data, false)
-}
-
-func AppendPutContent[DType string | []byte](filename string, data DType) {
-	_ = FilePutContents(filename, data, true)
-}
-
 func IsExist(path string) bool {
 	_, err := os.Stat(path) //os.Stat获取文件信息
 	if err != nil {
@@ -85,19 +50,18 @@ func IsExist(path string) bool {
 	return true
 }
 
-func IsExistOrCreate(path string, init string) bool {
+func IsExistOrCreate(path string, init string) error {
 	if IsExist(path) {
-		return true
+		return nil
 	}
-	PutContent(path, init)
-	return true
+	return FilePutContents(path, init)
 }
 
-func DirExistOrCreate(dirPath string) bool {
+func DirExistOrCreate(dirPath string) error {
 	if IsExist(dirPath) {
-		return true
+		return nil
 	} else {
-		return os.MkdirAll(dirPath, os.ModePerm) != nil
+		return os.MkdirAll(dirPath, 0755)
 	}
 }
 
