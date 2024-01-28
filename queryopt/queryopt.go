@@ -1,4 +1,4 @@
-package querymaker
+package queryopt
 
 import (
 	"fmt"

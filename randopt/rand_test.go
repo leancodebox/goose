@@ -1,4 +1,4 @@
-package luckrand
+package randopt
 
 import (
 	"fmt"
