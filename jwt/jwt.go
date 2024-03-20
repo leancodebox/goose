@@ -100,14 +100,16 @@ func (itself *JWT) ParseToken(tokenString string) (*CustomClaims, error) {
 	}
 
 	if err != nil {
-		if ve, ok := err.(*jwt.ValidationError); ok {
-			if ve.Errors&jwt.ValidationErrorMalformed != 0 {
+		var ve *jwt.ValidationError
+		if errors.As(err, &ve) {
+			switch {
+			case ve.Errors&jwt.ValidationErrorMalformed != 0:
 				return nil, TokenMalformed
-			} else if ve.Errors&jwt.ValidationErrorExpired != 0 {
+			case ve.Errors&jwt.ValidationErrorExpired != 0:
 				return nil, TokenExpired
-			} else if ve.Errors&jwt.ValidationErrorNotValidYet != 0 {
+			case ve.Errors&jwt.ValidationErrorNotValidYet != 0:
 				return nil, TokenNotValidYet
-			} else {
+			default:
 				return nil, TokenInvalid
 			}
 		} else {
