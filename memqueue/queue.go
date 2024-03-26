@@ -2,6 +2,7 @@ package memqueue
 
 import (
 	"errors"
+	"github.com/leancodebox/goose/collectionopt"
 	"sync"
 
 	"github.com/leancodebox/goose/fileopt"
@@ -58,7 +59,7 @@ func QueueRPushObj[T any](key string, data ...T) {
 	queueLock.Lock()
 	defer queueLock.Unlock()
 	queue, _ := queueList[key]
-	strData := array.ArrayMap(func(t T) string {
+	strData := collectionopt.ArrayMap(func(t T) string {
 		entity := jsonopt.Encode(t)
 		return entity
 	}, data)

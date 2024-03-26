@@ -7,7 +7,6 @@ import (
 	"testing"
 
 	"github.com/leancodebox/goose/fileopt"
-	"github.com/leancodebox/goose/power"
 
 	"github.com/spf13/cast"
 )
@@ -88,23 +87,22 @@ func TestFqm(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
-	power.Together(func(goId int) {
-		for {
-			data, popErr := q.Pop()
-			if popErr != nil {
-				if popErr == io.EOF {
-					break
-				} else {
-					t.Error(popErr)
-					break
-				}
-			}
-			n += 1
-			if n%stopNum == 0 {
-				t.Log(`n%`+cast.ToString(stopNum), data)
+
+	for {
+		data, popErr := q.Pop()
+		if popErr != nil {
+			if popErr == io.EOF {
+				break
+			} else {
+				t.Error(popErr)
+				break
 			}
 		}
-	}, 3)
+		n += 1
+		if n%stopNum == 0 {
+			t.Log(`n%`+cast.ToString(stopNum), data)
+		}
+	}
 
 	err = q.Clean()
 	if err != nil {
@@ -146,23 +144,21 @@ func TestFqm2(t *testing.T) {
 	}
 
 	n := 0
-	power.Together(func(goId int) {
-		for {
-			data, popErr := q.Pop()
-			if popErr != nil {
-				if popErr == io.EOF {
-					break
-				} else {
-					t.Error(popErr)
-					break
-				}
-			}
-			n += 1
-			if n%stopNum == 0 {
-				t.Log(`n%`+cast.ToString(stopNum), data)
+	for {
+		data, popErr := q.Pop()
+		if popErr != nil {
+			if popErr == io.EOF {
+				break
+			} else {
+				t.Error(popErr)
+				break
 			}
 		}
-	}, 3)
+		n += 1
+		if n%stopNum == 0 {
+			t.Log(`n%`+cast.ToString(stopNum), data)
+		}
+	}
 
 	err = q.Clean()
 	if err != nil {

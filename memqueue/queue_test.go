@@ -6,7 +6,6 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/leancodebox/goose/power"
 	"github.com/spf13/cast"
 )
 
@@ -61,19 +60,19 @@ func TestQueueB(t *testing.T) {
 		}
 	}
 	n := 0
-	power.Together(func(goId int) {
-		for {
-			data, popErr := QueueLPop(key)
-			if popErr != nil {
-				break
-			}
-			n += 1
-			if n%stopNum == 0 {
-				t.Log(`n%`+cast.ToString(stopNum), data)
 
-			}
+	for {
+		data, popErr := QueueLPop(key)
+		if popErr != nil {
+			break
 		}
-	}, 3)
+		n += 1
+		if n%stopNum == 0 {
+			t.Log(`n%`+cast.ToString(stopNum), data)
+
+		}
+	}
+
 }
 
 // Memory Queue
@@ -145,17 +144,17 @@ func TestFastQ(t *testing.T) {
 		}
 	}
 	n := 0
-	power.Together(func(goId int) {
-		for {
-			data := q.Pop()
-			if data == nil {
-				break
-			}
-			n += 1
-			if n%stopNum == 0 {
-				t.Log(`n%`+cast.ToString(stopNum), data)
 
-			}
+	for {
+		data := q.Pop()
+		if data == nil {
+			break
 		}
-	}, 3)
+		n += 1
+		if n%stopNum == 0 {
+			t.Log(`n%`+cast.ToString(stopNum), data)
+
+		}
+	}
+
 }
