@@ -1,4 +1,4 @@
-package array
+package collectionopt
 
 import (
 	"fmt"

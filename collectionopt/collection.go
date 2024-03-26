@@ -1,4 +1,4 @@
-package array
+package collectionopt
 
 func InArray[vT comparable](need vT, haystack []vT) bool {
 	for _, v := range haystack {

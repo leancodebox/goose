@@ -1,4 +1,4 @@
-package jwt
+package jwtopt
 
 import (
 	"github.com/golang-jwt/jwt/v4"
@@ -11,8 +11,8 @@ import (
 var (
 	once       sync.Once
 	std        *JWT
-	signingKey = preferences.Get("jwt.signingKey", "mq+ZeGafL+b1xdC0u9vSVg==")
-	validTime  = cast.ToDuration(preferences.GetInt64("jwt.validTime", 86400*7)) * time.Second
+	signingKey = preferences.Get("jwtopt.signingKey", "mq+ZeGafL+b1xdC0u9vSVg==")
+	validTime  = cast.ToDuration(preferences.GetInt64("jwtopt.validTime", 86400*7)) * time.Second
 )
 
 func Std() *JWT {
