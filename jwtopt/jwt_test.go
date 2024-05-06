@@ -7,16 +7,23 @@ import (
 )
 
 func TestCreateNewToken(t *testing.T) {
-	token, err := CreateNewToken(123456, time.Second)
+	token, err := CreateNewToken(123456, time.Second*2)
 	if err != nil {
-		fmt.Println(err)
+		t.Error(err)
+		return
+	}
+	fmt.Println(token)
+	time.Sleep(time.Second)
+	userId, newToken, err := VerifyTokenWithFresh(token)
+	fmt.Printf("userId %v newToken %v %v", userId, newToken, err)
+	if err != nil {
+		t.Error(err)
 		return
 	}
 
-	fmt.Println(token)
-	userId, err := VerifyToken(token)
+	userId, err = VerifyToken(token)
 	if err != nil {
-		fmt.Println(err)
+		t.Error(err)
 		return
 	}
 	fmt.Println(userId)
@@ -26,7 +33,7 @@ func TestCreateNewToken(t *testing.T) {
 	fmt.Println(token)
 	userId, err = VerifyToken(token)
 	if err != nil {
-		fmt.Println(err)
+		t.Error(err)
 		return
 	}
 	fmt.Println(userId)
@@ -35,14 +42,14 @@ func TestCreateNewToken(t *testing.T) {
 func TestVerifyTokenWithFresh(t *testing.T) {
 	token, err := CreateNewToken(123456, 15*time.Second)
 	if err != nil {
-		fmt.Println(err)
+		t.Error(err)
 		return
 	}
 
 	fmt.Println("token created : ", token)
 	userId, newToken, err := VerifyTokenWithFresh(token)
 	if err != nil {
-		fmt.Println(err)
+		t.Error(err)
 		return
 	}
 	fmt.Println("token can use")
@@ -55,8 +62,9 @@ func TestVerifyTokenWithFresh(t *testing.T) {
 	fmt.Println(token)
 	userId, err = VerifyToken(token)
 	if err != nil {
-		fmt.Println(err)
+		t.Error(err)
 		return
 	}
 	fmt.Println(userId)
+	fmt.Println("success")
 }

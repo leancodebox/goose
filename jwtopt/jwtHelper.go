@@ -1,7 +1,6 @@
 package jwtopt
 
 import (
-	"github.com/golang-jwt/jwt/v4"
 	"github.com/leancodebox/goose/preferences"
 	"github.com/spf13/cast"
 	"sync"
@@ -28,10 +27,10 @@ func VerifyTokenWithFresh(tokenStr string) (userId uint64, newToken string, err 
 	if err != nil {
 		return 0, "", err
 	}
-
-	if !claims.VerifyExpiresAt(time.Now().Add(time.Second*86400*1), true) {
-		claims.ExpiresAt = jwt.NewNumericDate(time.Now().Add(validTime))
-		tokenStr, _ = Std().CreateToken(*claims)
+	eTime, err := claims.GetExpirationTime()
+	if err == nil && time.Now().Add(time.Second*86400*1).After(eTime.Time) {
+		claims.RegisteredClaims = GetBaseRegisteredClaims(validTime)
+		tokenStr, err = Std().CreateToken(*claims)
 	}
 	return claims.UserId, tokenStr, err
 }
