@@ -25,13 +25,6 @@ func NewJWT(signingKey []byte) *JWT {
 	}
 }
 
-func CreateNewToken(userId uint64, expireTime time.Duration) (string, error) {
-	cc := CustomClaims{
-		UserId:           userId,
-		RegisteredClaims: GetBaseRegisteredClaims(expireTime),
-	}
-	return Std().CreateToken(cc)
-}
 
 func GetBaseRegisteredClaims(expireTime time.Duration) jwt.RegisteredClaims {
 	return jwt.RegisteredClaims{

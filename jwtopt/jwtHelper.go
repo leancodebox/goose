@@ -21,6 +21,14 @@ func Std() *JWT {
 	return std
 }
 
+func CreateNewToken(userId uint64, expireTime time.Duration) (string, error) {
+	cc := CustomClaims{
+		UserId:           userId,
+		RegisteredClaims: GetBaseRegisteredClaims(expireTime),
+	}
+	return Std().CreateToken(cc)
+}
+
 // VerifyTokenWithFresh 验证token 并刷新， 如果token还有1天就过期则生成新的token，否则还是用原来的
 func VerifyTokenWithFresh(tokenStr string) (userId uint64, newToken string, err error) {
 	claims, err := Std().ParseToken(tokenStr)
