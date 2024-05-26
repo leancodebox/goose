@@ -44,8 +44,8 @@ func TestArrayMap(t *testing.T) {
 
 func TestArrayFilter(t *testing.T) {
 	a := []int{1, 2, 3, 4}
-	a = ArrayFilter(func(item int) bool {
+	a = ArrayFilter(a, func(item int) bool {
 		return item > 2
-	}, a)
+	})
 	fmt.Println(a)
 }

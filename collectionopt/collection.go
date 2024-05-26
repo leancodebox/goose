@@ -1,15 +1,26 @@
 package collectionopt
 
-func InArray[vT comparable](need vT, haystack []vT) bool {
-	for _, v := range haystack {
-		if need == v {
-			return true
-		}
-	}
-	return false
-}
+//type Collection[T any] struct {
+//	value []T // 数组
+//}
+//
+//func NewCollection[T any](slice []T) *Collection[T] {
+//	return &Collection[T]{value: []T{}}
+//}
+//
+//func (c *Collection[T]) Map[R any](action func(T) R) *Collection[R] {
+//	var res []R
+//	for _, item := range c.value {
+//		res = append(res, Map[T, R](item, action))
+//	}
+//	return NewCollection(res)
+//}
+//
+//func Map[T, R any](item T, action func(T) R) R {
+//	return action(item)
+//}
 
-func ArrayMap[T, R any](f func(T) R, list []T) (result []R) {
+func Map[T, R any](list []T, f func(T) R) (result []R) {
 	result = make([]R, len(list))
 	for index, item := range list {
 		result[index] = f(item)
@@ -17,7 +28,11 @@ func ArrayMap[T, R any](f func(T) R, list []T) (result []R) {
 	return
 }
 
-func ArrayFilter[T any](f func(T) bool, list []T) (result []T) {
+func ArrayMap[T, R any](f func(T) R, list []T) []R {
+	return Map[T, R](list, f)
+}
+
+func Filter[T any](list []T, f func(T) bool) (result []T) {
 	for _, item := range list {
 		if f(item) {
 			result = append(result, item)
@@ -34,18 +49,6 @@ func ArrayFill[T any](startIndex int, num uint, value T) map[int]T {
 		startIndex++
 	}
 	return result
-}
-
-func ArrayKeyExists(key any, arr map[any]any) bool {
-	if len(arr) == 0 {
-		return false
-	}
-	for k := range arr {
-		if key == k {
-			return true
-		}
-	}
-	return false
 }
 
 func Map2Slice[K comparable, V any](m map[K]V) []V {
