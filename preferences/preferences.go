@@ -3,6 +3,7 @@ package preferences
 import (
 	"flag"
 	"log/slog"
+	"sync"
 
 	"github.com/fsnotify/fsnotify"
 	"github.com/spf13/cast"
@@ -38,10 +39,31 @@ func internalGet(path string, defaultValue ...any) any {
 	return v.Get(path)
 }
 
-// openWatch 监控配置文件
-func openWatch(event func(e fsnotify.Event)) {
-	v.OnConfigChange(event)
-	v.WatchConfig()
+// OpenConfigChangeEvent 开启监控配置文件⌚️
+func OpenConfigChangeEvent() {
+	v.OnConfigChange(runEvent)
+}
+
+var eventManagerLock sync.Locker
+var eventList []func(e fsnotify.Event)
+
+func AddWatch(event func(e fsnotify.Event)) {
+	eventManagerLock.Lock()
+	defer eventManagerLock.Unlock()
+	eventList = append(eventList, event)
+}
+
+func runEvent(e fsnotify.Event) {
+	eventManagerLock.Lock()
+	defer func() {
+		eventManagerLock.Unlock()
+		if r := recover(); r != nil {
+			slog.Error("recover", "r", r)
+		}
+	}()
+	for _, item := range eventList {
+		item(e)
+	}
 }
 
 // Get 获取配置项 允许使用点式获取，如：app.name
