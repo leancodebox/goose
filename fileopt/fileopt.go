@@ -6,55 +6,64 @@ import (
 	"strings"
 )
 
-// Put 将数据存入文件
-func Put[DataType []byte | string](data DataType, to string) (err error) {
-	err = os.WriteFile(to, []byte(data), 0644)
-	return
+func GetContents(filename string) ([]byte, error) {
+	return os.ReadFile(filename)
 }
 
 func FileGetContents(filename string) ([]byte, error) {
 	return os.ReadFile(filename)
 }
 
+func PutContents[DType string | []byte](filename string, data DType, isAppend ...bool) error {
+	return FilePutContents(filename, data, isAppend...)
+}
+
 // FilePutContents file_put_contents
 func FilePutContents[DType string | []byte](filename string, data DType, isAppend ...bool) error {
 	if dir := filepath.Dir(filename); dir != "" && dir != "." {
-		if err := os.MkdirAll(dir, 0755); err != nil {
-			return err
-		}
-	}
-
-	bData := []byte(data)
-	needAppend := len(isAppend) > 0 && isAppend[0] == true
-	if needAppend {
-		fl, err := os.OpenFile(filename, os.O_APPEND|os.O_CREATE|os.O_RDWR, 0644)
+		err := os.MkdirAll(dir, 0755)
 		if err != nil {
 			return err
 		}
-		defer fl.Close()
-		_, err = fl.Write(bData)
-		return err
-	} else {
-		return os.WriteFile(filename, bData, 0644)
 	}
+	byteDate := []byte(data)
+	needAppend := len(isAppend) > 0 && isAppend[0] == true
+	// write to file
+	if !needAppend {
+		return os.WriteFile(filename, byteDate, 0644)
+	}
+	// append to file
+	fl, err := os.OpenFile(filename, os.O_APPEND|os.O_CREATE|os.O_RDWR, 0644)
+	if err != nil {
+		return err
+	}
+	_, err = fl.Write(byteDate)
+	if err1 := fl.Close(); err1 != nil && err == nil {
+		err = err1
+	}
+	return err
 }
 
 func IsExist(path string) bool {
 	_, err := os.Stat(path) //os.Stat获取文件信息
-	if err != nil {
-		if os.IsExist(err) {
-			return true
-		}
-		return false
+	if err == nil {
+		return true
 	}
-	return true
+	if os.IsExist(err) {
+		return true
+	}
+	return false
 }
 
-func IsExistOrCreate(path string, init string) error {
+func IsExistOrCreate[T string | []byte](path string, init ...T) error {
 	if IsExist(path) {
 		return nil
 	}
-	return FilePutContents(path, init)
+	var initData []byte
+	if len(init) == 1 {
+		initData = []byte(init[0])
+	}
+	return FilePutContents(path, initData)
 }
 
 func DirExistOrCreate(dirPath string) error {
@@ -76,6 +85,6 @@ func AbsPath(path string) (string, error) {
 	return path, nil
 }
 
-func FileNameWithoutExtension(fileName string) string {
+func Filename(fileName string) string {
 	return strings.TrimSuffix(fileName, filepath.Ext(fileName))
 }
