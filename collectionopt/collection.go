@@ -20,6 +20,14 @@ package collectionopt
 //	return action(item)
 //}
 
+func IsEmpty[T []any | map[any]any](col T) bool {
+	return col == nil || len(col) == 0
+}
+
+func IsNotEmpty[T []any | map[any]any](col T) bool {
+	return !IsEmpty(col)
+}
+
 func Map[T, R any](list []T, f func(T) R) (result []R) {
 	result = make([]R, len(list))
 	for index, item := range list {
