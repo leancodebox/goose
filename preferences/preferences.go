@@ -44,7 +44,7 @@ func OpenConfigChangeEvent() {
 	v.OnConfigChange(runEvent)
 }
 
-var eventManagerLock sync.Locker
+var eventManagerLock sync.Mutex
 var eventList []func(e fsnotify.Event)
 
 func AddWatch(event func(e fsnotify.Event)) {
