@@ -97,7 +97,7 @@ type FileQueue struct {
 // Vacuum 压缩文件，清理已经出队的数据
 func (itself *FileQueue) Vacuum() error {
 	itself.lock.Lock()
-	itself.lock.Unlock()
+	defer itself.lock.Unlock()
 	var err error
 	tmpQueueHandle, err := OpenOrCreateFile(itself.getQueueTmpPath())
 	if err != nil {
