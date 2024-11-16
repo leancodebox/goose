@@ -25,7 +25,7 @@ func NewFileQueue(dirPath string, blockLen int64) (*FileQueue, error) {
 			version:    libVersion,
 			blockLen:   blockLen,
 			offset:     defaultOffset,
-			dataMaxLen: blockLen - blockValidLen - blockDataLenConfigOffLen, // blockLen - validLen - dateLenConfigLen
+			dataMaxLen: blockLen - BlockValidLen - BlockDataLenLen, // blockLen - validLen - dateLenConfigLen
 		}}
 	err := tmp.init()
 	return &tmp, err
@@ -37,9 +37,9 @@ head
 这里所用的都是字节(byte) 非位(bit)
 |(64B) :libVersion(8B) blockLen(8B) offset(8B) 0(8B) 0(8B) 0(8B) 0(8B) 0(8B) |
 head libVersion 为版本 blockLen 为块大小 决定后续每个数据块的大小 offset 为当前偏移量，表示着当前位于队列的哪一个数据块下
-如果为0 则说明位于第一个数据块下 为 headLen + 0 * blockLen = 64
+如果为0 则说明位于第一个数据块下 为 HeadLen + 0 * blockLen = 64
 |(64B): valid(1B) len(8B) data(小于55B) 0(xB)|
-数据块格式 第一位为预设有效位。第2到9字节为当前数据长度。表示从 headLen + 0 * blockLen + 1 + 8 开始 取 len 长度的字节为之前存储的数据
+数据块格式 第一位为预设有效位。第2到9字节为当前数据长度。表示从 HeadLen + 0 * blockLen + 1 + 8 开始 取 len 长度的字节为之前存储的数据
 |(64B): valid(1B) len(8B) data(小于55B) 0(xB)|
 |(64B): valid(1B) len(8B) data(小于55B) 0(xB)|
 |(64B): valid(1B) len(8B) data(小于55B) 0(xB)|
@@ -47,22 +47,22 @@ head libVersion 为版本 blockLen 为块大小 决定后续每个数据块的�
 
 // 下面部分常量不会记录在文件中
 const (
-	// headLen head 长度 文件前 xB 的数据为header 的存储空间
-	headLen int64 = 64
-	// versionOffset 版本号在文件中下标
-	versionOffset = 0
-	// blockLenConfigOffset  数据库在文件中下标
-	blockLenConfigOffset = 8
-	// offsetConfigOffset 偏移量在文件中的下标
-	offsetConfigOffset = 16
+	// HeadLen head 长度 文件前 xB 的数据为header 的存储空间
+	HeadLen int64 = 64
+	// VersionOffset 版本号在文件中下标
+	VersionOffset = 0
+	// BlockLenOffset  数据库在文件中下标
+	BlockLenOffset = 8
+	// OffsetConfigOffset 偏移量在文件中的下标
+	OffsetConfigOffset = 16
 
-	blockValidOffset = 0
-	// defaultValidLen
-	blockValidLen            = 1
-	blockDataLenConfigOffset = blockValidOffset + blockValidLen
-	// 数据长度字节长度
-	blockDataLenConfigOffLen    = 8
-	blockDataLenConfigOffsetEnd = blockDataLenConfigOffset + blockDataLenConfigOffLen
+	// Block flags and lengths
+
+	BlockValidOffset   = 0
+	BlockValidLen      = 1
+	BlockDataLenOffset = BlockValidOffset + BlockValidLen
+	BlockDataLenLen    = 8
+	BlockDataEndOffset = BlockDataLenOffset + BlockDataLenLen
 )
 
 // 下面常量部分配置为默认值。并且有可能会写入文件中
@@ -104,7 +104,7 @@ func (itself *FileQueue) Vacuum() error {
 		return err
 	}
 	// 迁移头
-	header := make([]byte, headLen)
+	header := make([]byte, HeadLen)
 	if _, err = itself.readAt(header, 0); err != nil {
 		return err
 	}
@@ -116,19 +116,19 @@ func (itself *FileQueue) Vacuum() error {
 	var i int64
 	// 迁移剩余队列
 	for {
-		lastN, _ := itself.readAt(blockData, itself.header.offset*itself.header.blockLen+headLen+i*int64(mDataLen))
+		lastN, _ := itself.readAt(blockData, itself.header.offset*itself.header.blockLen+HeadLen+i*int64(mDataLen))
 		if lastN < mDataLen {
 			// 如果获取的数据小于一个数据块儿，说明是最后一块。单独处理
 			lastData := make([]byte, lastN)
 			for di := 0; di < lastN; di++ {
 				lastData[di] = blockData[di]
 			}
-			if _, err = tmpQueueHandle.WriteAt(lastData, headLen+i*int64(mDataLen)); err != nil {
+			if _, err = tmpQueueHandle.WriteAt(lastData, HeadLen+i*int64(mDataLen)); err != nil {
 				return err
 			}
 			break
 		} else {
-			if _, err = tmpQueueHandle.WriteAt(blockData, headLen+i*int64(mDataLen)); err != nil {
+			if _, err = tmpQueueHandle.WriteAt(blockData, HeadLen+i*int64(mDataLen)); err != nil {
 				return err
 			}
 		}
@@ -137,7 +137,7 @@ func (itself *FileQueue) Vacuum() error {
 	}
 	// 新队列重制偏移量
 	itself.header.offset = defaultOffset
-	_, err = tmpQueueHandle.WriteAt(Int64ToBytes(itself.header.offset), offsetConfigOffset)
+	_, err = tmpQueueHandle.WriteAt(Int64ToBytes(itself.header.offset), OffsetConfigOffset)
 	if err != nil {
 		return err
 	}
@@ -176,8 +176,8 @@ func (itself *FileQueue) init() error {
 	if err != nil {
 		return err
 	}
-	headerData := make([]byte, headLen)
-	n, err := itself.readAt(headerData, blockLenConfigOffset)
+	headerData := make([]byte, HeadLen)
+	n, err := itself.readAt(headerData, BlockLenOffset)
 	if n == 0 {
 		err = itself.writeHeader()
 	} else {
@@ -194,7 +194,7 @@ func (itself *FileQueue) Len() int64 {
 	itself.drLock.Lock()
 	defer itself.drLock.Unlock()
 	n, _ := itself.queueHandle.Seek(0, io.SeekEnd)
-	return (n - headLen) / itself.header.blockLen
+	return (n - HeadLen) / itself.header.blockLen
 
 }
 
@@ -229,7 +229,7 @@ func (itself *FileQueue) Pop() (string, error) {
 	itself.drLock.Lock()
 	defer itself.drLock.Unlock()
 	// 数据块起始位置 head + block * n
-	blockOffset := itself.header.offset*itself.header.blockLen + headLen
+	blockOffset := itself.header.offset*itself.header.blockLen + HeadLen
 	if cap(itself.unitDataBuf) < int(itself.header.blockLen) {
 		itself.unitDataBuf = make([]byte, itself.header.blockLen)
 	} else {
@@ -238,8 +238,8 @@ func (itself *FileQueue) Pop() (string, error) {
 	if _, err := itself.readAt(itself.unitDataBuf, blockOffset); err != nil {
 		return "", err
 	}
-	dataLen := BytesToInt64(itself.unitDataBuf[blockDataLenConfigOffset:blockDataLenConfigOffsetEnd])
-	data := itself.unitDataBuf[blockDataLenConfigOffsetEnd : blockDataLenConfigOffsetEnd+dataLen]
+	dataLen := BytesToInt64(itself.unitDataBuf[BlockDataLenOffset:BlockDataEndOffset])
+	data := itself.unitDataBuf[BlockDataEndOffset : BlockDataEndOffset+dataLen]
 	if err := itself.updateOffset(); err != nil {
 		return "", err
 	}
@@ -249,7 +249,7 @@ func (itself *FileQueue) Pop() (string, error) {
 // 更新偏移
 func (itself *FileQueue) updateOffset() error {
 	itself.header.offset += 1
-	_, err := itself.writeInt64At(itself.header.offset, offsetConfigOffset)
+	_, err := itself.writeInt64At(itself.header.offset, OffsetConfigOffset)
 	if err != nil {
 		return err
 	}
@@ -259,9 +259,9 @@ func (itself *FileQueue) updateOffset() error {
 // writeHeader 写入头信息
 func (itself *FileQueue) writeHeader() error {
 	data := make([]byte, 64)
-	binary.LittleEndian.PutUint64(data[versionOffset:versionOffset+8], uint64(itself.header.version))
-	binary.LittleEndian.PutUint64(data[blockLenConfigOffset:blockLenConfigOffset+8], uint64(itself.header.blockLen))
-	binary.LittleEndian.PutUint64(data[offsetConfigOffset:offsetConfigOffset+8], uint64(itself.header.offset))
+	binary.LittleEndian.PutUint64(data[VersionOffset:VersionOffset+8], uint64(itself.header.version))
+	binary.LittleEndian.PutUint64(data[BlockLenOffset:BlockLenOffset+8], uint64(itself.header.blockLen))
+	binary.LittleEndian.PutUint64(data[OffsetConfigOffset:OffsetConfigOffset+8], uint64(itself.header.offset))
 	binary.LittleEndian.PutUint64(data[24:64], 0)
 	if _, err := itself.queueHandle.WriteAt(data, 0); err != nil {
 		return err
@@ -280,7 +280,7 @@ func (itself *FileQueue) readHeader() error {
 	itself.header.version = int64(version)
 	itself.header.blockLen = int64(blockLen)
 	itself.header.offset = int64(offset)
-	itself.header.dataMaxLen = itself.header.blockLen - blockValidLen - blockDataLenConfigOffLen
+	itself.header.dataMaxLen = itself.header.blockLen - BlockValidLen - BlockDataLenLen
 	return nil
 }
 
