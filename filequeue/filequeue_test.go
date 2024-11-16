@@ -2,28 +2,14 @@ package filequeue
 
 import (
 	"fmt"
+	"github.com/leancodebox/goose/fileopt"
 	"github.com/leancodebox/goose/jsonopt"
 	"io"
+	"sync"
 	"testing"
-
-	"github.com/leancodebox/goose/fileopt"
 
 	"github.com/spf13/cast"
 )
-
-type Queue interface {
-	Push(data string) error
-	Pop() (string, error)
-	Len() int64
-	Clean() error
-}
-
-func TestData2(t *testing.T) {
-	_, err := OpenOrCreateFile("./storage/queue2/1_000_000_0020.q")
-	if err != nil {
-		fmt.Println(err)
-	}
-}
 
 func TestCheckQueueData(t *testing.T) {
 	// 64 + 128+ 128 = 256 + 64 = 320
@@ -38,111 +24,117 @@ func TestCheckQueueData(t *testing.T) {
 	}
 }
 
-type TestUnitData struct {
-	Valid bool   `json:"valid"`
-	Data  string `json:"data"`
-}
-
-func TestFqm(t *testing.T) {
-	var q Queue
-	q, err := NewDefaultFileQueue("./storage/queue")
-
-	if err != nil {
-		t.Error(err)
-	}
-
-	err = q.Clean()
-	if err != nil {
-		t.Error(err)
-	}
-
-	maxTest := 1_000_000
-	stopNum := 10_000
-
-	for i := 1; i <= maxTest; i++ {
-		err = q.Push(jsonopt.Encode(TestUnitData{true, cast.ToString(i) + "加个汉字"}))
-		if err != nil {
-			t.Error(err)
-		}
-		if i%stopNum == 0 {
-		}
-	}
-
-	n := 0
-	for {
-		data, popErr := q.Pop()
-		if popErr != nil {
-			t.Log(err)
-			break
-		}
-		n += 1
-		if n%10 == 0 {
-			t.Log(data)
-			break
-		}
-	}
-	t.Log("清理数据")
-
-	err = q.Clean()
-	if err != nil {
-		t.Error(err)
-	}
-
-	for {
-		data, popErr := q.Pop()
-		if popErr != nil {
-			if popErr == io.EOF {
-				break
-			} else {
-				t.Error(popErr)
-				break
-			}
-		}
-		n += 1
-		if n%stopNum == 0 {
-			t.Log(`n%`+cast.ToString(stopNum), data)
-		}
-	}
-
-	err = q.Clean()
-	if err != nil {
-		t.Error(err)
-	}
-}
-
 func TestArrSet(t *testing.T) {
-	block := make([]byte, 64)
-	data := []byte(`汉字`)
-	ReplaceData(block, data, 3)
+	block := []byte{1, 1, 1, 1}
+	data := []byte{2, 2}
+	ReplaceData(block, data, 2)
 	fmt.Println(block)
 }
 
-func TestFqm2(t *testing.T) {
-	var q Queue
-	q, err := NewFileQueue("./storage/bigBlockQueue", 1024)
+type TestUnitData struct {
+	Valid bool   `json:"valid"`
+	Id    int64  `json:"id"`
+	Data  string `json:"data"`
+}
 
-	if err != nil {
-		t.Error(err)
-	}
+type Queue interface {
+	Push(data string) error
+	Pop() (string, error)
+	Len() int64
+	Vacuum() error
+}
 
-	err = q.Clean()
-	if err != nil {
-		t.Error(err)
-	}
-
+func TestQueue(t *testing.T) {
 	maxTest := 1_000_000
-	stopNum := 10_000
-
+	stopNum := maxTest / 10
+	strData := "字字字字字"
+	var q Queue
+	q, err := NewDefaultFileQueue("./storage/queue")
+	if err != nil {
+		t.Error(err)
+	}
+	err = q.Vacuum()
+	if err != nil {
+		t.Error(err)
+	}
+	t.Log("插入足够的内容到队列中")
 	for i := 1; i <= maxTest; i++ {
-		err = q.Push(jsonopt.Encode(TestUnitData{true, cast.ToString(i) + "加个汉字加个汉字加个汉字加个汉字加个汉字加个汉字加个汉字加个汉字加个汉字加个汉字加个汉字加个汉字加个汉字加个汉字加个汉字加个汉字加个汉字加个汉字加个汉字加个汉字加个汉字加个汉字加个汉字加个汉字加个汉字加个汉字加个汉字加个汉字加个汉字加个汉字加个汉字加个汉字加个汉字加个汉字加个汉字加个汉字加个汉字加个汉字加个汉字加个汉字加个汉字加个汉字加个汉字加个汉字加个汉字加个汉字加个汉字加个汉字加个汉字加个汉字加个汉字加个汉字加个汉字加个汉字加个汉字加个汉字加个汉字加个汉字加个汉字加个汉字加个汉字加个汉字加个汉字加个汉字加个汉字加个汉字加个汉字加个汉字加个汉字加个汉字加个汉字加个汉字加个汉字加个汉字加个汉字加个汉字加个汉字加个汉字加个汉字加个汉字"}))
+		err = q.Push(jsonopt.Encode(TestUnitData{true, int64(i), strData}))
 		if err != nil {
 			t.Error(err)
 		}
-		if i%stopNum == 0 {
+	}
+	t.Log("顺序取出10条数据")
 
+	for i := 1; i <= 10; i++ {
+		_, popErr := q.Pop()
+		if popErr != nil {
+			t.Error(popErr)
+			break
 		}
 	}
+	t.Log("Vacuum")
+	err = q.Vacuum()
+	if err != nil {
+		t.Error(err)
+	}
+	t.Log("开始读取队列所有内容")
+	wg := sync.WaitGroup{}
+	for i := 1; i <= 3; i++ {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			n := 0
+			for {
+				data, popErr := q.Pop()
+				if popErr != nil {
+					if popErr == io.EOF {
+						break
+					} else {
+						t.Error(popErr)
+						break
+					}
+				}
+				n += 1
+				if n%stopNum == 0 {
+					t.Log(`n%`+toString(stopNum), data)
+				}
+				res := jsonopt.Decode[TestUnitData](data)
+				if res.Data != strData {
+					t.Errorf("数据波动 %v", res.Data)
+				}
+			}
+		}()
+	}
+	wg.Wait()
+	err = q.Vacuum()
+	if err != nil {
+		t.Error(err)
+	}
+}
 
+func TestQueue4bigData(t *testing.T) {
+	maxTest := 1_000_000
+	stopNum := maxTest / 10
+	var q Queue
+	q, err := NewFileQueue("./storage/bigBlockQueue", 1024)
+	var longStr string
+	for i := 1; i <= 100; i++ {
+		longStr += "字"
+	}
+	if err != nil {
+		t.Error(err)
+	}
+	err = q.Vacuum()
+	if err != nil {
+		t.Error(err)
+	}
+	for i := 1; i <= maxTest; i++ {
+		err = q.Push(jsonopt.Encode(TestUnitData{true, int64(i), longStr}))
+		if err != nil {
+			t.Error(err)
+		}
+	}
 	n := 0
 	for {
 		data, popErr := q.Pop()
@@ -158,10 +150,17 @@ func TestFqm2(t *testing.T) {
 		if n%stopNum == 0 {
 			t.Log(`n%`+cast.ToString(stopNum), data)
 		}
+		res := jsonopt.Decode[TestUnitData](data)
+		if res.Data != longStr {
+			t.Errorf("数据波动 %v", res.Data)
+		}
 	}
-
-	err = q.Clean()
+	err = q.Vacuum()
 	if err != nil {
 		t.Error(err)
 	}
+}
+
+func toString(p any) string {
+	return fmt.Sprintf("%v", p)
 }

@@ -4,6 +4,7 @@ import (
 	"encoding/binary"
 	"errors"
 	"io"
+	"log/slog"
 	"os"
 	"path/filepath"
 	"sync"
@@ -92,8 +93,8 @@ type FileQueue struct {
 	readInt64Buf [8]byte
 }
 
-// Clean 压缩文件，清理已经出队的数据
-func (itself *FileQueue) Clean() error {
+// Vacuum 压缩文件，清理已经出队的数据
+func (itself *FileQueue) Vacuum() error {
 	itself.drLock.Lock()
 	itself.drLock.Unlock()
 	var err error
@@ -180,6 +181,9 @@ func (itself *FileQueue) init() error {
 		err = itself.writeHeader()
 	} else {
 		err = itself.readHeader()
+		if err == nil {
+			slog.Info("读取header成功")
+		}
 	}
 	return err
 }
@@ -206,6 +210,7 @@ func (itself *FileQueue) Push(data string) error {
 	}
 	unitData := make([]byte, itself.header.blockLen)
 	unitData[0] = 1
+	//copy(unitData[1:], Int64ToBytes(int64(len(dataByte))))
 	ReplaceData(unitData, Int64ToBytes(int64(len(dataByte))), 1)
 	ReplaceData(unitData, dataByte, 9)
 	n, _ := itself.queueHandle.Seek(0, io.SeekEnd)
@@ -222,11 +227,9 @@ func (itself *FileQueue) Pop() (string, error) {
 	// 数据块起始位置 head + block * n
 	blockOffset := itself.header.offset*itself.header.blockLen + headLen
 	oData := make([]byte, itself.header.blockLen)
-
 	if _, err := itself.readAt(oData, blockOffset); err != nil {
 		return "", err
 	}
-	//valid := int64(oData[0])
 	dataLen := BytesToInt64(oData[blockDataLenConfigOffset:blockDataLenConfigOffsetEnd])
 	data := oData[blockDataLenConfigOffsetEnd : blockDataLenConfigOffsetEnd+dataLen]
 	if err := itself.updateOffset(); err != nil {
