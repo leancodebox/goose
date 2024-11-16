@@ -186,6 +186,7 @@ func (itself *FileQueue) init() error {
 			slog.Info("读取header成功")
 		}
 	}
+	// 初始化每次设置的buffer
 	itself.unitDataBuf = make([]byte, itself.header.blockLen)
 	return err
 }
@@ -210,9 +211,9 @@ func (itself *FileQueue) Push(data string) error {
 	if len(dataByte) > int(itself.header.dataMaxLen) {
 		return errors.New("当前数据长度超过最大长度")
 	}
-	itself.unitDataBuf[0] = 1
-	copy(itself.unitDataBuf[1:], Int64ToBytes(int64(len(dataByte))))
-	copy(itself.unitDataBuf[9:], dataByte)
+	itself.unitDataBuf[BlockValidOffset] = 1
+	copy(itself.unitDataBuf[BlockDataLenOffset:], Int64ToBytes(int64(len(dataByte))))
+	copy(itself.unitDataBuf[BlockDataEndOffset:], dataByte)
 	n, _ := itself.fileHandle.Seek(0, io.SeekEnd)
 	_, err := itself.writeAt(itself.unitDataBuf, n)
 	return err
@@ -229,7 +230,7 @@ func (itself *FileQueue) Pop() (string, error) {
 	if _, err := itself.readAt(itself.unitDataBuf, blockOffset); err != nil {
 		return "", err
 	}
-	dataLen := BytesToInt64(itself.unitDataBuf[BlockDataLenOffset:BlockDataEndOffset])
+	dataLen := int64(binary.LittleEndian.Uint64(itself.unitDataBuf[BlockDataLenOffset:BlockDataEndOffset]))
 	data := itself.unitDataBuf[BlockDataEndOffset : BlockDataEndOffset+dataLen]
 	if err := itself.updateOffset(); err != nil {
 		return "", err
@@ -265,9 +266,9 @@ func (itself *FileQueue) readHeader() error {
 	if _, err := itself.fileHandle.ReadAt(data, 0); err != nil {
 		return err
 	}
-	version := binary.LittleEndian.Uint64(data[:8])
-	blockLen := binary.LittleEndian.Uint64(data[8:16])
-	offset := binary.LittleEndian.Uint64(data[16:24])
+	version := binary.LittleEndian.Uint64(data[VersionOffset : VersionOffset+8])
+	blockLen := binary.LittleEndian.Uint64(data[BlockLenOffset : BlockLenOffset+8])
+	offset := binary.LittleEndian.Uint64(data[OffsetConfigOffset : OffsetConfigOffset+8])
 	itself.header.version = int64(version)
 	itself.header.blockLen = int64(blockLen)
 	itself.header.offset = int64(offset)
@@ -311,13 +312,6 @@ func Int64ToBytes(i int64) []byte {
 	buf := make([]byte, 8)
 	binary.LittleEndian.PutUint64(buf, uint64(i))
 	return buf
-}
-
-func BytesToInt64(buf []byte) int64 {
-	if len(buf) < 8 {
-		buf = append(make([]byte, 8-len(buf)), buf...)
-	}
-	return int64(binary.LittleEndian.Uint64(buf))
 }
 
 func OpenOrCreateFile(path string) (*os.File, error) {
