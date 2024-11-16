@@ -21,7 +21,7 @@ func NewFileQueue(dirPath string, blockLen int64) (*FileQueue, error) {
 	}
 	tmp := FileQueue{queueDir: dirPath,
 		header: &QueueHeader{
-			version:    version,
+			version:    libVersion,
 			blockLen:   blockLen,
 			offset:     defaultOffset,
 			dataMaxLen: blockLen - blockValidLen - blockDataLenConfigOffLen, // blockLen - validLen - dateLenConfigLen
@@ -34,8 +34,8 @@ func NewFileQueue(dirPath string, blockLen int64) (*FileQueue, error) {
 *
 head
 这里所用的都是字节(byte) 非位(bit)
-|(64B) :version(8B) blockLen(8B) offset(8B) 0(8B) 0(8B) 0(8B) 0(8B) 0(8B) |
-head version 为版本 blockLen 为块大小 决定后续每个数据块的大小 offset 为当前偏移量，表示着当前位于队列的哪一个数据块下
+|(64B) :libVersion(8B) blockLen(8B) offset(8B) 0(8B) 0(8B) 0(8B) 0(8B) 0(8B) |
+head libVersion 为版本 blockLen 为块大小 决定后续每个数据块的大小 offset 为当前偏移量，表示着当前位于队列的哪一个数据块下
 如果为0 则说明位于第一个数据块下 为 headLen + 0 * blockLen = 64
 |(64B): valid(1B) len(8B) data(小于55B) 0(xB)|
 数据块格式 第一位为预设有效位。第2到9字节为当前数据长度。表示从 headLen + 0 * blockLen + 1 + 8 开始 取 len 长度的字节为之前存储的数据
@@ -66,7 +66,7 @@ const (
 
 // 下面常量部分配置为默认值。并且有可能会写入文件中
 const (
-	version = 1
+	libVersion = 1
 	// 默认偏移量
 	defaultOffset = 0
 	// 默认数据块长度
@@ -85,10 +85,11 @@ type QueueHeader struct {
 }
 
 type FileQueue struct {
-	queueDir    string
-	drLock      sync.Mutex
-	queueHandle *os.File
-	header      *QueueHeader
+	queueDir     string
+	drLock       sync.Mutex
+	queueHandle  *os.File
+	header       *QueueHeader
+	readInt64Buf [8]byte
 }
 
 // Clean 压缩文件，清理已经出队的数据
@@ -320,10 +321,7 @@ func BytesToInt64(buf []byte) int64 {
 
 // ReplaceData 替换指定位置之后的数据
 func ReplaceData(o []byte, d []byte, i int) {
-	for _, item := range d {
-		o[i] = item
-		i += 1
-	}
+	copy(o[i:], d)
 }
 
 func OpenOrCreateFile(path string) (*os.File, error) {
