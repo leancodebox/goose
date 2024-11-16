@@ -91,6 +91,7 @@ type FileQueue struct {
 	queueHandle  *os.File
 	header       *QueueHeader
 	readInt64Buf [8]byte
+	unitData     []byte
 }
 
 // Vacuum 压缩文件，清理已经出队的数据
@@ -208,13 +209,16 @@ func (itself *FileQueue) Push(data string) error {
 	if len(dataByte) > int(itself.header.dataMaxLen) {
 		return errors.New("当前数据长度超过最大长度")
 	}
-	unitData := make([]byte, itself.header.blockLen)
-	unitData[0] = 1
-	//copy(unitData[1:], Int64ToBytes(int64(len(dataByte))))
-	ReplaceData(unitData, Int64ToBytes(int64(len(dataByte))), 1)
-	ReplaceData(unitData, dataByte, 9)
+	if cap(itself.unitData) < int(itself.header.blockLen) {
+		itself.unitData = make([]byte, itself.header.blockLen)
+	} else {
+		itself.unitData = itself.unitData[:int(itself.header.blockLen)]
+	}
+	itself.unitData[0] = 1
+	copy(itself.unitData[1:], Int64ToBytes(int64(len(dataByte))))
+	copy(itself.unitData[9:], dataByte)
 	n, _ := itself.queueHandle.Seek(0, io.SeekEnd)
-	_, err := itself.writeAt(unitData, n)
+	_, err := itself.writeAt(itself.unitData, n)
 	return err
 }
 
