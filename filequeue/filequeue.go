@@ -91,7 +91,7 @@ type FileQueue struct {
 	queueHandle  *os.File
 	header       *QueueHeader
 	readInt64Buf [8]byte
-	unitData     []byte
+	unitDataBuf  []byte
 }
 
 // Vacuum 压缩文件，清理已经出队的数据
@@ -209,16 +209,16 @@ func (itself *FileQueue) Push(data string) error {
 	if len(dataByte) > int(itself.header.dataMaxLen) {
 		return errors.New("当前数据长度超过最大长度")
 	}
-	if cap(itself.unitData) < int(itself.header.blockLen) {
-		itself.unitData = make([]byte, itself.header.blockLen)
+	if cap(itself.unitDataBuf) < int(itself.header.blockLen) {
+		itself.unitDataBuf = make([]byte, itself.header.blockLen)
 	} else {
-		itself.unitData = itself.unitData[:int(itself.header.blockLen)]
+		itself.unitDataBuf = itself.unitDataBuf[:int(itself.header.blockLen)]
 	}
-	itself.unitData[0] = 1
-	copy(itself.unitData[1:], Int64ToBytes(int64(len(dataByte))))
-	copy(itself.unitData[9:], dataByte)
+	itself.unitDataBuf[0] = 1
+	copy(itself.unitDataBuf[1:], Int64ToBytes(int64(len(dataByte))))
+	copy(itself.unitDataBuf[9:], dataByte)
 	n, _ := itself.queueHandle.Seek(0, io.SeekEnd)
-	_, err := itself.writeAt(itself.unitData, n)
+	_, err := itself.writeAt(itself.unitDataBuf, n)
 	return err
 }
 
@@ -230,16 +230,16 @@ func (itself *FileQueue) Pop() (string, error) {
 	defer itself.drLock.Unlock()
 	// 数据块起始位置 head + block * n
 	blockOffset := itself.header.offset*itself.header.blockLen + headLen
-	if cap(itself.unitData) < int(itself.header.blockLen) {
-		itself.unitData = make([]byte, itself.header.blockLen)
+	if cap(itself.unitDataBuf) < int(itself.header.blockLen) {
+		itself.unitDataBuf = make([]byte, itself.header.blockLen)
 	} else {
-		itself.unitData = itself.unitData[:int(itself.header.blockLen)]
+		itself.unitDataBuf = itself.unitDataBuf[:int(itself.header.blockLen)]
 	}
-	if _, err := itself.readAt(itself.unitData, blockOffset); err != nil {
+	if _, err := itself.readAt(itself.unitDataBuf, blockOffset); err != nil {
 		return "", err
 	}
-	dataLen := BytesToInt64(itself.unitData[blockDataLenConfigOffset:blockDataLenConfigOffsetEnd])
-	data := itself.unitData[blockDataLenConfigOffsetEnd : blockDataLenConfigOffsetEnd+dataLen]
+	dataLen := BytesToInt64(itself.unitDataBuf[blockDataLenConfigOffset:blockDataLenConfigOffsetEnd])
+	data := itself.unitDataBuf[blockDataLenConfigOffsetEnd : blockDataLenConfigOffsetEnd+dataLen]
 	if err := itself.updateOffset(); err != nil {
 		return "", err
 	}
