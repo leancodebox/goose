@@ -329,11 +329,6 @@ func BytesToInt64(buf []byte) int64 {
 	return int64(binary.LittleEndian.Uint64(buf))
 }
 
-// ReplaceData 替换指定位置之后的数据
-func ReplaceData(o []byte, d []byte, i int) {
-	copy(o[i:], d)
-}
-
 func OpenOrCreateFile(path string) (*os.File, error) {
 	err := os.MkdirAll(filepath.Dir(path), os.ModePerm)
 	if err != nil {

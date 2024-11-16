@@ -24,12 +24,6 @@ func TestCheckQueueData(t *testing.T) {
 	}
 }
 
-func TestArrSet(t *testing.T) {
-	block := []byte{1, 1, 1, 1}
-	data := []byte{2, 2}
-	ReplaceData(block, data, 2)
-	fmt.Println(block)
-}
 
 type TestUnitData struct {
 	Valid bool   `json:"valid"`
