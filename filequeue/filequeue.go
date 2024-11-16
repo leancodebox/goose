@@ -12,7 +12,7 @@ import (
 
 // NewDefaultFileQueue 标准队列实体，返回一个可以使用的队列管理器
 func NewDefaultFileQueue(dirPath string) (*FileQueue, error) {
-	return NewFileQueue(dirPath, defaultBlockLen)
+	return NewFileQueue(dirPath, DefaultBlockLen)
 }
 
 // NewFileQueue dirPath 是队列目录，blockLen 是队列的块长度，不要小于等于9。前9位用于块数据是否消费/块有效长度等数据。
@@ -22,9 +22,9 @@ func NewFileQueue(dirPath string, blockLen int64) (*FileQueue, error) {
 	}
 	tmp := FileQueue{queueDir: dirPath,
 		header: &QueueHeader{
-			version:    libVersion,
+			version:    LibVersion,
 			blockLen:   blockLen,
-			offset:     defaultOffset,
+			offset:     DefaultOffset,
 			dataMaxLen: blockLen - BlockValidLen - BlockDataLenLen, // blockLen - validLen - dateLenConfigLen
 		}}
 	err := tmp.init()
@@ -35,8 +35,8 @@ func NewFileQueue(dirPath string, blockLen int64) (*FileQueue, error) {
 *
 head
 这里所用的都是字节(byte) 非位(bit)
-|(64B) :libVersion(8B) blockLen(8B) offset(8B) 0(8B) 0(8B) 0(8B) 0(8B) 0(8B) |
-head libVersion 为版本 blockLen 为块大小 决定后续每个数据块的大小 offset 为当前偏移量，表示着当前位于队列的哪一个数据块下
+|(64B) :LibVersion(8B) blockLen(8B) offset(8B) 0(8B) 0(8B) 0(8B) 0(8B) 0(8B) |
+head LibVersion 为版本 blockLen 为块大小 决定后续每个数据块的大小 offset 为当前偏移量，表示着当前位于队列的哪一个数据块下
 如果为0 则说明位于第一个数据块下 为 HeadLen + 0 * blockLen = 64
 |(64B): valid(1B) len(8B) data(小于55B) 0(xB)|
 数据块格式 第一位为预设有效位。第2到9字节为当前数据长度。表示从 HeadLen + 0 * blockLen + 1 + 8 开始 取 len 长度的字节为之前存储的数据
@@ -67,11 +67,11 @@ const (
 
 // 下面常量部分配置为默认值。并且有可能会写入文件中
 const (
-	libVersion = 1
-	// 默认偏移量
-	defaultOffset = 0
-	// 默认数据块长度
-	defaultBlockLen = 128
+	LibVersion = 1
+	// DefaultOffset 默认偏移量
+	DefaultOffset = 0
+	// DefaultBlockLen 默认数据块长度
+	DefaultBlockLen = 128
 )
 
 type QueueHeader struct {
@@ -136,7 +136,7 @@ func (itself *FileQueue) Vacuum() error {
 		i += 1
 	}
 	// 新队列重制偏移量
-	itself.header.offset = defaultOffset
+	itself.header.offset = DefaultOffset
 	_, err = tmpQueueHandle.WriteAt(Int64ToBytes(itself.header.offset), OffsetConfigOffset)
 	if err != nil {
 		return err
@@ -186,6 +186,7 @@ func (itself *FileQueue) init() error {
 			slog.Info("读取header成功")
 		}
 	}
+	itself.unitDataBuf = make([]byte, itself.header.blockLen)
 	return err
 }
 
@@ -209,11 +210,6 @@ func (itself *FileQueue) Push(data string) error {
 	if len(dataByte) > int(itself.header.dataMaxLen) {
 		return errors.New("当前数据长度超过最大长度")
 	}
-	if cap(itself.unitDataBuf) < int(itself.header.blockLen) {
-		itself.unitDataBuf = make([]byte, itself.header.blockLen)
-	} else {
-		itself.unitDataBuf = itself.unitDataBuf[:int(itself.header.blockLen)]
-	}
 	itself.unitDataBuf[0] = 1
 	copy(itself.unitDataBuf[1:], Int64ToBytes(int64(len(dataByte))))
 	copy(itself.unitDataBuf[9:], dataByte)
@@ -230,11 +226,6 @@ func (itself *FileQueue) Pop() (string, error) {
 	defer itself.drLock.Unlock()
 	// 数据块起始位置 head + block * n
 	blockOffset := itself.header.offset*itself.header.blockLen + HeadLen
-	if cap(itself.unitDataBuf) < int(itself.header.blockLen) {
-		itself.unitDataBuf = make([]byte, itself.header.blockLen)
-	} else {
-		itself.unitDataBuf = itself.unitDataBuf[:int(itself.header.blockLen)]
-	}
 	if _, err := itself.readAt(itself.unitDataBuf, blockOffset); err != nil {
 		return "", err
 	}
