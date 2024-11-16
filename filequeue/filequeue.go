@@ -230,12 +230,16 @@ func (itself *FileQueue) Pop() (string, error) {
 	defer itself.drLock.Unlock()
 	// 数据块起始位置 head + block * n
 	blockOffset := itself.header.offset*itself.header.blockLen + headLen
-	oData := make([]byte, itself.header.blockLen)
-	if _, err := itself.readAt(oData, blockOffset); err != nil {
+	if cap(itself.unitData) < int(itself.header.blockLen) {
+		itself.unitData = make([]byte, itself.header.blockLen)
+	} else {
+		itself.unitData = itself.unitData[:int(itself.header.blockLen)]
+	}
+	if _, err := itself.readAt(itself.unitData, blockOffset); err != nil {
 		return "", err
 	}
-	dataLen := BytesToInt64(oData[blockDataLenConfigOffset:blockDataLenConfigOffsetEnd])
-	data := oData[blockDataLenConfigOffsetEnd : blockDataLenConfigOffsetEnd+dataLen]
+	dataLen := BytesToInt64(itself.unitData[blockDataLenConfigOffset:blockDataLenConfigOffsetEnd])
+	data := itself.unitData[blockDataLenConfigOffsetEnd : blockDataLenConfigOffsetEnd+dataLen]
 	if err := itself.updateOffset(); err != nil {
 		return "", err
 	}
