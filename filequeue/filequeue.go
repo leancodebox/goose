@@ -212,7 +212,7 @@ func (itself *FileQueue) Push(data string) error {
 		return errors.New("当前数据长度超过最大长度")
 	}
 	itself.unitDataBuf[BlockValidOffset] = 1
-	copy(itself.unitDataBuf[BlockDataLenOffset:], Int64ToBytes(int64(len(dataByte))))
+	copy(itself.unitDataBuf[BlockDataLenOffset:], itself.Int64ToBytes(int64(len(dataByte))))
 	copy(itself.unitDataBuf[BlockDataEndOffset:], dataByte)
 	n, _ := itself.fileHandle.Seek(0, io.SeekEnd)
 	_, err := itself.writeAt(itself.unitDataBuf, n)
@@ -296,14 +296,9 @@ func (itself *FileQueue) readAt(b []byte, off int64) (n int, err error) {
 	return itself.fileHandle.ReadAt(b, off)
 }
 
-// readInt64At 在队列文件指定位置读取一个int64的数据
-func (itself *FileQueue) readInt64At(off int64) (data int64, err error) {
-	_, err = itself.readAt(itself.readInt64Buf[:], off)
-	if err != nil {
-		return
-	}
-	data = int64(binary.LittleEndian.Uint64(itself.readInt64Buf[:]))
-	return
+func (itself *FileQueue) Int64ToBytes(n int64) []byte {
+	binary.LittleEndian.PutUint64(itself.readInt64Buf[:], uint64(n))
+	return itself.readInt64Buf[:] // 返回切片的视图，注意这仍然是同一个底层数组
 }
 
 // util
