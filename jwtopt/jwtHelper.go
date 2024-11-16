@@ -2,7 +2,6 @@ package jwtopt
 
 import (
 	"github.com/leancodebox/goose/preferences"
-	"github.com/spf13/cast"
 	"sync"
 	"time"
 )
@@ -11,7 +10,7 @@ var (
 	once       sync.Once
 	std        *JWT
 	signingKey = preferences.Get("jwtopt.signingKey", "mq+ZeGafL+b1xdC0u9vSVg==")
-	validTime  = cast.ToDuration(preferences.GetInt64("jwtopt.validTime", 86400*7)) * time.Second
+	validTime  = time.Duration(preferences.GetInt64("jwtopt.validTime", 86400*7)) * time.Second
 )
 
 func Std() *JWT {

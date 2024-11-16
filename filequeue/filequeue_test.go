@@ -7,14 +7,16 @@ import (
 	"io"
 	"sync"
 	"testing"
-
-	"github.com/spf13/cast"
 )
 
 func TestCheckQueueData(t *testing.T) {
 	// 64 + 128+ 128 = 256 + 64 = 320
 	// 280 - 128 -128 =  24
-	data, _ := fileopt.FileGetContents("./storage/queue/1_000_000_000.q")
+	data, err := fileopt.FileGetContents("./storage/queue/1_000_000_000.q")
+	if err != nil {
+		t.Error(err)
+		return
+	}
 	fmt.Println(len(data))
 	fmt.Println(data[0:63])
 	for i := 0; i < (len(data)-64)/128+1; i++ {
@@ -23,7 +25,6 @@ func TestCheckQueueData(t *testing.T) {
 		fmt.Println(data[start:end])
 	}
 }
-
 
 type TestUnitData struct {
 	Valid bool   `json:"valid"`
@@ -142,7 +143,7 @@ func TestQueue4bigData(t *testing.T) {
 		}
 		n += 1
 		if n%stopNum == 0 {
-			t.Log(`n%`+cast.ToString(stopNum), data)
+			t.Log(`n%`+fmt.Sprintf("%v", stopNum), data)
 		}
 		res := jsonopt.Decode[TestUnitData](data)
 		if res.Data != longStr {
