@@ -295,12 +295,11 @@ func (itself *FileQueue) readAt(b []byte, off int64) (n int, err error) {
 
 // readInt64At 在队列文件指定位置读取一个int64的数据
 func (itself *FileQueue) readInt64At(off int64) (data int64, err error) {
-	b := Int64ToBytes(1)
-	_, err = itself.readAt(b, off)
+	_, err = itself.readAt(itself.readInt64Buf[:], off)
 	if err != nil {
 		return
 	}
-	data = BytesToInt64(b)
+	data = int64(binary.LittleEndian.Uint64(itself.readInt64Buf[:]))
 	return
 }
 
